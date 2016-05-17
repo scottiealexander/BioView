@@ -1,0 +1,19 @@
+date-time: 20160517_14-25
+matlab-version: 8.5.0.197613 (R2015a)
+computer-arch: win64
+os: 
+Microsoft Windows [Version 6.1.7601]
+
+data-file: L:\Anahita\Image_01.vsi
+
+error-message: Invalid field name: 'DAPI W'.
+stack-trace:
+	********************
+	file: C:\Users\Wiltgenlab\Documents\MATLAB\BioView\BioView.m
+	function: BioView/InitData
+	line: 531
+	********************
+	file: C:\Users\Wiltgenlab\Documents\MATLAB\BioView\BioView.m
+	function: BioView
+	line: 55
+	********************

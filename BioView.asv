@@ -360,9 +360,7 @@ function pt = GetMouseLocation(varargin)
 end
 %-----------------------------------------------------------------------------%
 function Keypress(obj,evt)
-    
-    num_labl = num2cell(sprintf('%d',1:numel(cChan)));
-    
+    num_lab
     switch lower(evt.Key)
     case 'shift'
         ScrollWheelFcn(CONTRAST);
@@ -385,7 +383,7 @@ function Keypress(obj,evt)
         end
         DATA.(cChan{kc}).h(end+1,1) = AddCircle(pt,kc);
         DATA.(cChan{kc}).c(end+1,:) = [pt ZCUR+KZ(1)];
-    case num_labl
+    case {'1','2','3','4'}
         if ~isempty(evt.Modifier) && ismember('control',evt.Modifier)
             kl = w.GetElementProp('labl','Value');
             

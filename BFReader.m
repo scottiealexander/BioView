@@ -88,20 +88,23 @@ methods
             end
         end
         if self.io
-            switch lower(name)
-            case {'gfp','fitc'}
-                name = 'fitc';
-            case {'cfos','fos','tritc'}
-                name = 'tritc';
-            case {'dapi','dapi w'}
-                name = self.chan{strncmpi(name,self.chan,4)};
-                if isempty(name)
-                    error('Channel name %s could not be found',name);
-                end
-            otherwise
-                % error('Channel name %s could not be found',name);
+%             switch lower(name)
+%             case {'gfp','fitc'}
+%                 name = 'fitc';
+%             case {'cfos','fos','tritc','cy3','cy5'}
+%                 name = 'tritc';
+%             case {'dapi','dapi w','dapi n'}
+%                 name = self.chan{strncmpi(name,self.chan,4)};
+%                 if isempty(name)
+%                     error('Channel name %s could not be found',name);
+%                 end
+%             otherwise
+%                 error('Channel name %s could not be found',name);
+%             end
+            kchan = find(strcmpi(name,self.chan),1,'first');
+            if isempty(kchan)
+                error('Channel name %s could not be found',name);
             end
-            kchan = find(strcmpi(name,self.chan),1,'first');        
             d = self.ReadChannel(kchan,kslice);
         else
             d = self.rep(:,:,kslice);
@@ -187,7 +190,7 @@ methods (Access=private)
             error('Failed to find channel labels, aborting...');
         end
         
-        self.chan = unique(value(1:self.nchan));
+        self.chan = cellfun(@self.str2field, unique(value(1:self.nchan)), 'uni', false);
         
         if numel(self.chan) ~= self.nchan
            error('Failed to recover from missing metadata... aborting');
@@ -204,17 +207,21 @@ methods (Access=private)
 
         d = zeros([self.siz(1:2) numel(kslice)]);
         for k = 1:numel(kslice)
-            idx = self.rep.getIndex(kslice(k)-1,kchan-1,0);
-            pln = self.rep.openBytes(idx);
-            tmp = loci.common.DataTools.makeDataArray2D(...
-                       pln, bpp, fp, ltl, self.im_siz(1)...
-                       );
-            if self.resize
-                % self.scale_factor = self.scale_factor * (1+(400/self.im_siz(1)));
-                % tmp = tmp(1:end-400,1:end-400,:);
-                d(:,:,k) = imresize(tmp,self.siz(1:2));
-            else
-                d(:,:,k) = tmp;
+            try
+                idx = self.rep.getIndex(kslice(k)-1,kchan-1,0);
+                pln = self.rep.openBytes(idx);
+                tmp = loci.common.DataTools.makeDataArray2D(...
+                           pln, bpp, fp, ltl, self.im_siz(1)...
+                           );
+                if self.resize
+                    % self.scale_factor = self.scale_factor * (1+(400/self.im_siz(1)));
+                    % tmp = tmp(1:end-400,1:end-400,:);
+                    d(:,:,k) = imresize(tmp,self.siz(1:2));
+                else
+                    d(:,:,k) = tmp;
+                end
+            catch me
+               keyboard; 
             end
         end
         d = d - min(d(:));
@@ -223,5 +230,18 @@ methods (Access=private)
     %-------------------------------------------------------------------------%
 end
 %PRIVATE METHODS--------------------------------------------------------------%
+
+%STATIC METHODS---------------------------------------------------------------%
+methods (Static=true)
+    %-------------------------------------------------------------------------%
+    function field = str2field(strfield)
+       field = regexprep(strfield,'\W+','_');
+       if field(1) == '_'
+           field = field(2:end);
+       end
+    end
+    %-------------------------------------------------------------------------%
+end
+%STATIC METHODS---------------------------------------------------------------%
 
 end
