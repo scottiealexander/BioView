@@ -1,0 +1,37 @@
+BioView User Guide
+
+Navigation:
+    "g" - change to GFP channel view
+    "f" - change to FOS channel view
+    "d" - change to DAPI channel view
+    "o" - change to OVERLAP view (allows marking of overlapping labels
+          *IF* multiple channels have been labeled)
+
+    "w" - toggle pan mode (click & drag to move FOV in X,Y plane)
+
+    <scroll wheel> - change Z-plane
+    <shift+scroll> - change contrast
+    <ctrl+scroll>  - zoom in/out
+
+Labels:
+    "a" - label cell at current mouse pointer location
+          label type/color will reflect the current channel
+
+    <right-click> - *IF* pan mode is off *AND* right-click occurs within a 
+                   labeled cell, allows the selected to be deleted
+
+    <click+drag> - *IF* pan mode is off *AND* click occurs within a labeled
+                   cell, allows the label to be dragged to a new location
+
+    <ctrl>+"g" - show GPF labels
+    <ctrl>+"f" - show FOS labels
+    <ctrl>+"d" - show DAPI labels
+    <ctrl>+"o" - show OVERLAP labels
+
+Saving/Loading:
+    <ctrl>+"l" - load ROI data from a .mat file
+    <ctrl>+"s" - save ROI data (as a .mat file)
+                 or final cell counts (as a .csv file)    
+
+User Guide:
+    <ctrl>+"h" - view this user guide
