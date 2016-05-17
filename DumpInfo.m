@@ -17,7 +17,7 @@ function DumpInfo(ifile, me)
 %
 % Please report bugs to: scottiealexander11@gmail.com
 
-str = datestr(datetime('now'), 'yyyymmdd_HH-MM');
+str = datestr(now(), 'yyyymmdd_HH-MM');
 
 ofile = GenLogFile(str);
 
