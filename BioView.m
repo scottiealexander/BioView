@@ -1,20 +1,19 @@
-function DATA = BioView(KZ,varargin)
+function DATA = BioView(varargin)
 
 % BioView
 %
 % Description:
 %
-% Syntax: BioView(kz,[inp]=<prompt>)
+% Syntax: BioView([inp]=<prompt>)
 %
 % In:
-%       kz    - the slice range of the image to load
 %       [inp] - a .vsi or .mat file path, count data structure, or BFReader
 %               call with no inputs to prompt for file path
 %
 % Out:
 %       data - a BioView data structure
 %
-% Updated: 2016-01-22
+% Updated: 2016-05-17
 % Scottie Alexander
 %
 % Please report bugs to: scottiealexander11@gmail.com
@@ -45,7 +44,19 @@ ZOOM_STATE = 1;
 PTCUR = NaN;
 HPTCUR = NaN;
 
-[DATA,BFR] = InitData(varargin);
+if isempty(varargin) || isempty(varargin{1})
+    varargin{1} = GetImagePath({'*.vsi;*.mat'});
+    if isempty(varargin{1})
+        return;
+    end
+end
+
+try
+    [DATA,BFR] = InitData(varargin);
+catch me
+    DumpInfo(img_path, me);
+    rethrow(me);
+end
 
 if isempty(BFR)
     return;
@@ -53,12 +64,11 @@ end
 
 CIRC_RAD = ceil(CIRC_RAD*sqrt(BFR.scale_factor));
 
-% ns = size(BFR,3);
-% KZ = ceil(ns*(1/3)):ns;
+KZ = GetSliceRange();
 
-% KZ = 11:27;
-
-% cChan = setdiff(fieldnames(DATA),'path_im');
+if isempty(KZ)
+    return
+end
 
 d = BFR.Get(cChan{1},KZ);
 
@@ -66,9 +76,12 @@ SCR = get(0,'ScreenSize');
 pos = ScaleImage();
 
 h = figure('NumberTitle','off','Name','BioView','Units','pixels',...
-    'MenuBar','none','Position',pos,'KeyPressFcn',@Keypress,...
-    'KeyReleaseFcn',@Keyrelease,'WindowScrollWheelFcn',@ScrollSlice,...
-    'WindowButtonDownFcn',@StartCircleMv);
+    'MenuBar','none','Position',pos,...
+    'KeyPressFcn',@Keypress,...
+    'KeyReleaseFcn',@Keyrelease,...
+    'WindowScrollWheelFcn',@ScrollSlice,...
+    'WindowButtonDownFcn',@StartCircleMv...
+    );
 
 ax = axes('Units','Normalized','Position',[0 0 1 1]);
 
@@ -97,7 +110,12 @@ w = Win(c,'title','BioView Controller','grid',true,'Position',[-Inf,0]);
 SetZPlaneLabel();
 ShowLabel();
 
-w.Wait();
+try
+    w.Wait();
+catch me
+    fprintf('Caught error!\n');
+    rethrow(me);
+end
 
 for k = 1:numel(cChan)
     DATA.(cChan{k}) = DATA.(cChan{k}).c;
@@ -472,41 +490,33 @@ function DeleteCircles
     end
 end
 %-----------------------------------------------------------------------------%
-function [s,bf] = InitData(cin)
-    if isempty(cin) || isempty(cin{1})
-        cin{1} = GetImagePath({'*.vsi;*.mat'});
-        if isempty(cin{1})
-            [s,bf] = deal([]);
-            return;
-        end
-    end
+function [s,bf] = InitData(inp)
 
     s = struct();
 
-    switch lower(class(cin{1}))
+    switch lower(class(inp{1}))
     case 'char'
-        if strcmpi(regexp(cin{1},'\.([\w]+)$','match','once'),'.mat')
-            tmp = load(cin{1});
-            [s,bf] = InitData({tmp});
+        if strcmpi(regexp(inp{1},'\.([\w]+)$','match','once'),'.mat')
+            tmp = load(inp{1});
+            [s,bf] = InitData(tmp);
         else
-            bf = BFReader(cin{1});
+            bf = BFReader(inp{1});
         end
     case 'struct'
-        bf = BFReader(cin{1}.path_im);
-        % fn = setdiff(fieldnames(cin{1}),'path_im');
+        bf = BFReader(inp{1}.path_im);
         fn = cChan;
         for k = 1:numel(fn)
-            s.(fn{k}).c = cin{1}.(fn{k});
+            s.(fn{k}).c = inp{1}.(fn{k});
             s.(fn{k}).h = [];
         end
     case 'bfreader'
-        bf = cin{1};
+        bf = inp{1};
     otherwise
         error('Invalid input');
     end
+
     s.path_im = bf.img_path;
 
-    % fn = bf.chan;
     fn = cChan;
     for k = 1:numel(fn)
         if ~isfield(s,fn{k})
@@ -527,6 +537,63 @@ function pth = GetImagePath(typ)
     else
         pth = fullfile(fdir,fname);
     end
+end
+%-----------------------------------------------------------------------------%
+function kz = GetSliceRange()
+
+    kz = [];
+    n = BFR.im_siz(3);
+
+    ks = num2str(floor(n/3));
+    ke = num2str(n);
+
+    ctmp = {...
+        {'text','string','Please select the Z-range to load:'},...
+        {};...
+        {'text','string','First slice:'},...
+        {'edit','string',ks,'tag','kstart','valfun',{'inrange',1,n-1,true}};...
+        {'text','string','Last slice:'},...
+        {'edit','string',ke,'tag','kend','valfun',{'inrange',2,n,true}};...
+        {'pushbutton','string','Load','callback',@CheckSliceRange},...
+        {'pushbutton','string','Cancel','validate',false}...
+    };
+
+    wtmp = Win(ctmp, 'title', 'Slice selection', 'focus','kstart');
+    wtmp.Wait();
+
+    if strcmpi(wtmp.res.btn, 'load')
+        kz = wtmp.res.kstart:wtmp.res.kend;
+    end
+
+    %-------------------------------------------------------------------------%
+    function CheckSliceRange(obj, varargin)
+        kstart = str2double(wtmp.GetElementProp('kstart', 'string'));
+        kend = str2double(wtmp.GetElementProp('kend', 'string'));
+        tag = 'kstart';
+        msg = '';
+        if isnan(kstart)
+            msg = sprintf('"%s" is not a valid slice index!',...
+                wtmp.GetElementProp('kstart'));
+        elseif isnan(kend)
+            tag = 'kend';
+            msg = sprintf('"%s" is not a valid slice index!',...
+                wtmp.GetElementProp('kend'));
+        elseif kstart >= kend
+            msg = 'Starting slice index *MUST* be less than the ending slice index';
+        end
+        if ~isempty(msg)
+            tmp = {...
+                {'text','string', msg};...
+                {'pushbutton','string','OK'}...
+            };
+            tmp = Win(tmp, 'title', 'Error: Slice selection');
+            tmp.Wait();
+            wtmp.SetFocus(tag);
+        else
+            wtmp.BtnPush(obj,true);
+        end
+    end
+    %-------------------------------------------------------------------------%
 end
 %-----------------------------------------------------------------------------%
 function SaveData(varargin)
