@@ -27,6 +27,9 @@ function DATA = BioViewRunner(DATA, BFR)
 theta = linspace(0,2*pi,100);
 CIRC_RAD = 14;
 COLORS = [0 1 0; 1 0 0; 0 0 1; 1 1 0; 1 0 1; 0 1 1];
+if numel(BFR.chan) > size(COLORS,1)
+    COLORS = [COLORS; mge.Color(numel(BFR.chan)-size(COLORS,1)+1)];
+end
 
 %scroll wheel state enumeration
 SLICE = 0;
