@@ -24,6 +24,15 @@ function varargout = BioView(varargin)
 %       - auto (with cell volume entry)
 %       - allow saving to previous csv file
 
+% attempt to clean up Matlab memory situation on each startup
+if exist('org.dt.matlab.utilities.JavaMemoryCleaner.clear')
+    org.dt.matlab.utilities.JavaMemoryCleaner.clear(0);
+end
+try
+    java.lang.Runtime.getRuntime.gc();
+catch tmp
+end
+
 if isempty(varargin) || isempty(varargin{1})
     varargin{1} = GetImagePath({'*.vsi;*.mat'});
     if isempty(varargin{1})
