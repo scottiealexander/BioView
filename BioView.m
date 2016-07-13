@@ -34,19 +34,36 @@ end
 try
     [data, bf] = InitData(varargin);
 catch me
-    DumpInfo(varargin{1}, me);
-    rethrow(me);
+    % try and get the path to the loaded file...
+    switch lower(class(varargin{1}))
+    case 'char'
+        im_path = varargin{1};
+    case 'struct'
+        if isfield(varargin{1},'path_im')
+            im_path = varargin{1}.path_im;
+        else
+            im_path = '<unknown>';
+        end
+    case 'bfreader'
+        im_path = varargin{1}.img_path;
+    otherwise
+        im_path = '<unknown>';
+    end
+
+    % process the error
+    ErrorHandler(me, im_path);
+    return;
 end
 
 if isempty(bf)
     return;
 end
 
-varargout{1} = RunSafe(@ErrorHandler, @BioViewRunner, data, bf);
+varargout{1} = RunSafe(@(x) ErrorHandler(x, bf.img_path), @BioViewRunner, data, bf);
 
 %------------------------------------------------------------------------------%
-function ErrorHandler(err)
-    log_file = DumpInfo(bf.img_path, err);
+function ErrorHandler(err, img_path)
+    log_file = DumpInfo(img_path, err);
 
     msg = ['Oops..! A bug got through all the traps I set...\n' ...
            'Please email scottiealexander11@gmail.com with the\n' ...

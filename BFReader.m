@@ -177,6 +177,22 @@ methods (Access=private)
 
         % add loci_tools.jar to javaclasspath if needed
         loci_path = fullfile(fileparts(mfilename('fullpath')),'loci_tools.jar');
+
+        if exist(loci_path,'file') == 0
+            msg = [...
+                'Ahh crap, we failed to locate the loci_tools.jar file.\n '...
+                'Please make sure you copied it into the folder that\n'...
+                'contains this code.\nThanks!'...
+            ];
+            c = {{'text','string',sprintf(msg)};...
+                 {'pushbutton','string','Ok','tag','Ok'}...
+            };
+            w = Win(c,'title','Missing loci_tools','focus','Ok');
+            w.Wait();
+
+            error('Failed to locate loci_tools at "%s"', loci_path);
+        end
+
         if ~any(strcmpi(loci_path, javaclasspath('-dynamic')))
             javaaddpath(loci_path);
         end
