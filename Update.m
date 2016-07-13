@@ -13,6 +13,20 @@ function Update
 % Scottie Alexander
 %
 % Please report bugs to: scottiealexander11@gmail.com
+if ispc()
+    nulldev = 'NUL';
+else
+    nulldev = '/dev/null';
+end
+
+if system(['git status > ' nulldev]) == 0
+    msg = ['It appears "git" is not installed or not accessible. '...
+        'See the <a href='...
+        '"https://github.com/scottiealexander/BioView/wiki/Install">'...
+        'BioView wiki</a> for more information.'...
+    ];
+    error(msg);
+end
 
 repo = fileparts(mfilename('fullpath'));
 
