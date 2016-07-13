@@ -1,5 +1,4 @@
 function varargout = RunSafe(ferr, fproc, varargin)
-
 % RunSafe
 %
 % Description: run a function within a try-catch block

@@ -1,6 +1,7 @@
 BioView User Guide
 
 Navigation:
+
     "1" - change channel to view channel 1
     "2" - change channel to view channel 2
     <N> - change channel to view channel <N> *WHERE* <N> is between 1 and the

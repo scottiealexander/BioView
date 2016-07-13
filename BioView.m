@@ -17,6 +17,13 @@ function varargout = BioView(varargin)
 %
 % Please report bugs to: scottiealexander11@gmail.com
 
+%TODO:
+%   0) dapi processing button (calc all stats)
+%       - user selected/defined threshold for volume calculation
+%       - manual (user selected image width and number of images)
+%       - auto (with cell volume entry)
+%       - allow saving to previous csv file
+
 if isempty(varargin) || isempty(varargin{1})
     varargin{1} = GetImagePath({'*.vsi;*.mat'});
     if isempty(varargin{1})
@@ -87,24 +94,15 @@ function [s,bf] = InitData(inp)
 
     fn = [bf.Chan2Field(); {'overlap'}];
 
-    for k = 1:numel(fn)
-        if ~isfield(s,fn{k})
-            s.(fn{k}).c = [];
-            s.(fn{k}).h = [];
+    for kf = 1:numel(fn)
+        if ~isfield(s,fn{kf})
+            s.(fn{kf}).c = [];
+            s.(fn{kf}).h = [];
         end
     end
     if ~isfield(s,'overlap')
         s.overlap.c = [];
         s.overlap.h = [];
-    end
-end
-%------------------------------------------------------------------------------%
-function pth = GetImagePath(typ)
-    [fname,fdir] = uigetfile(typ,'Please select an image/data file');
-    if isequal(fname,0) || isequal(fdir,0)
-        pth = '';
-    else
-        pth = fullfile(fdir,fname);
     end
 end
 %------------------------------------------------------------------------------%

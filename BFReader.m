@@ -46,10 +46,16 @@ properties (Constant)
 end
 %CONSTANT PROPERTIES-----------------------------------------------------------%
 
-%PUBLIC METHODS----------------------------------------------------------------%
+
+%PUBLIC METHODS---------------------------------------------------------------%
 methods
-    %--------------------------------------------------------------------------%
+    %-------------------------------------------------------------------------%
     function self = BFReader(inp)
+        jpath = fullfile(fileparts(mfilename('fullpath')),'loci_tools.jar');
+        javaaddpath(jpath);
+
+        loci.common.DebugTools.enableLogging('OFF');
+
         if ischar(inp)
             self.img_path = inp;
             self.io = true;
@@ -61,6 +67,7 @@ methods
             self.chan = {'none'};
             self.nchan = 1;
             self.siz = size(self.rep);
+
         end
     end
     %--------------------------------------------------------------------------%
@@ -96,12 +103,18 @@ methods
             otherwise
                 % error('Channel name %s could not be found',name);
             end
+
             kchan = find(strcmpi(name,self.chan),1,'first');
+            if isempty(kchan)
+                error('Channel name %s could not be found',name);
+            end
+
             d = self.ReadChannel(kchan,kslice);
         else
             d = self.rep(:,:,kslice);
         end
     end
+
     %--------------------------------------------------------------------------%
     function varargout = size(self,varargin)
     % s = size([dim]=<all>)
@@ -201,6 +214,7 @@ methods (Access=private)
             raw = self.rep.getGlobalMetadata();
             warning('BFReader:ReadMetadataError','Series metadata appears to be empty, image may be missing auxiliary files');
         end
+
         field = cell(raw.keySet.toArray);
         value = cell(raw.values.toArray);
 
@@ -227,7 +241,6 @@ methods (Access=private)
         fp  = loci.formats.FormatTools.isFloatingPoint(pxt);
         ltl = self.rep.isLittleEndian();
 
-
         d = zeros([self.siz(1:2) numel(kslice)]);
         for k = 1:numel(kslice)
             idx = self.rep.getIndex(kslice(k)-1,kchan-1,0);
@@ -249,5 +262,18 @@ methods (Access=private)
     %--------------------------------------------------------------------------%
 end
 %PRIVATE METHODS---------------------------------------------------------------%
+
+%STATIC METHODS----------------------------------------------------------------%
+methods (Static=true)
+    %--------------------------------------------------------------------------%
+    function field = str2field(strfield)
+       field = regexprep(strfield,'\W+','_');
+       if field(1) == '_'
+           field = field(2:end);
+       end
+    end
+    %--------------------------------------------------------------------------%
+end
+%STATIC METHODS----------------------------------------------------------------%
 
 end
