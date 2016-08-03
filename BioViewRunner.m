@@ -27,6 +27,9 @@ function DATA = BioViewRunner(DATA, BFR)
 theta = linspace(0,2*pi,100);
 CIRC_RAD = 14;
 COLORS = [0 1 0; 1 0 0; 0 0 1; 1 1 0; 1 0 1; 0 1 1];
+if numel(BFR.chan) > size(COLORS,1)
+    COLORS = [COLORS; mge.Color(numel(BFR.chan)-size(COLORS,1)+1)];
+end
 
 %scroll wheel state enumeration
 SLICE = 0;
@@ -74,6 +77,8 @@ c = {{'text','string','Current Channel:'},...
      {'listbox','string',upper(cChan),'tag','chan','Callback',@ChangeChan};...
      {'text','string','Show Labels:'},...
      {'listbox','string',upper(cChan),'tag','labl','Max',3,'Callback',@ShowLabel};...
+     {'text','string','Label Color:'},...
+     {'pushbutton','string','Select','tag','color_select','Callback',@SelectColor};...
      {'text','string','Z-Plane:'},...
      {'edit','string','00','tag','zplane','Enable','inactive'};...
      {'text','string','Contrast Range:'},...
@@ -461,6 +466,13 @@ function pos = ScaleImage
     b = floor(((SCR(4)-50)/2)-(h/2));
 
     pos = [l,b,w,h];
+end
+%------------------------------------------------------------------------------%
+function SelectColor(varargin)
+    kc = w.GetElementProp('chan','Value');
+    col = uisetcolor(COLORS(kc,:),'Channel color');
+    COLORS(kc,:) = col;
+    ShowLabel();
 end
 %------------------------------------------------------------------------------%
 function hcir = AddCircle(pt,kcol)

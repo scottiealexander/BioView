@@ -19,36 +19,19 @@ function varargout = RunSafe(ferr, fproc, varargin)
 %
 % Please report bugs to: scottiealexander11@gmail.com
 
-persistent inprogress;
-if isempty(inprogress)
-    inprogress = false;
-end
-c = onCleanup(@() ResetProgress);
 
-% Only allow one operation to run at a time
-if ~inprogress
-    inprogress = true;
-
-    %try running the command and catch any error
+%try running the command and catch any error
+try
+    varargout = {fproc(varargin{:})};
+catch me
+    %error was reaised, attempt reporting
     try
-        varargout = {fproc(varargin{:})};
+        ferr(me);
     catch me
-        %error was reaised, attempt reporting
-        try
-            ferr(me);
-        catch me
-        end
-
-        % make sure output is assigned
-        varargout = {[]};
     end
 
-    inprogress = false;
+    % make sure output is assigned
+    varargout = {[]};
 end
 
-%-------------------------------------------------------------------------%
-function ResetProgress
-    inprogress = false;
-end
-%-------------------------------------------------------------------------%
 end
