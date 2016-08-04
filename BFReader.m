@@ -224,18 +224,18 @@ methods (Access=private)
             warning('BFReader:ReadMetadataError','Series metadata appears to be empty, image may be missing auxiliary files');
         end
 
-        field = cell(raw.keySet.toArray);
-        labels = cell(raw.values.toArray);
+        key_names = cell(raw.keySet.toArray);
+        values = cell(raw.values.toArray);
 
         % GIST: in the metadata, channel labels are listed as "Channel name #N"
         % => <channel_label_string>, the issue is that there seem to always be
         % 4 "Channel name" fields even if there are only 3 channels, thus we
         % parse the channel indicies (the <N> in "Channel name #N") and use
         %  those to order our channel label list (self.chan)
-        b = strncmpi(field,'channel name',12);
+        b = strncmpi(key_names,'channel name',12);
 
-        cfield = field(b);
-        labels = labels(b);
+        cfield = key_names(b);
+        labels = values(b);
 
         % kfield: a list mapping each label in <labels> to its channel index
         % in the image (hopefully), by default mapping is just 1:N
@@ -276,15 +276,31 @@ methods (Access=private)
                 ]);
         end
 
-        % order the labels to that labels(K) => label of channel #K
+        % order the labels so that labels(K) => label of channel #K
         [~,ksort] = sort(kfield);
         labels = labels(ksort);
 
         if numel(labels) < self.nchan
+            % dump image metadata to a text file so the DumpInfo function can
+            % add that to the error report / log file
+            [sdir, name] = fileparts(self.img_path);
+            ofile = fullfile(sdir, [name '_METADATA.log']);
+            io = fopen(ofile, 'w');
+            if io > -1
+                try
+                    for k = 1:numel(key_names)
+                        fprintf(io, '\t"%s" => "%s"\n', key_names{k},...
+                            values{k});
+                    end
+                catch me
+                    fprintf('ERROR: %s\n', me.message);
+                end
+                fclose(io);
+            end
             error('Failed to find channel labels, aborting...');
         end
 
-        % NOTE: we are assuming the if we have more labels than channels that
+        % NOTE: we are assuming that if we have more labels than channels that
         % the first N labels correctly map to the first N channels, which given
         % all the schenanigans we go through above to ensure that the labels
         % are in the correct order *SHOULD* always work... we'll have to see

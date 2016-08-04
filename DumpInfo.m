@@ -57,6 +57,30 @@ try
             );
     end
     fprintf(fid, '\t%s\n', repmat('*', 1, 20));
+
+    [sdir, name] = fileparts(ifile);
+    metafile = fullfile(sdir, [name '_METADATA.log']);
+
+    if exist(metafile, 'file') == 2
+        io = fopen(metafile, 'r');
+        if io > -1
+            success = false;
+            try
+                meta = transpose(fread(io, '*char'));
+
+                fprintf(fid, '\n%s\n','image-metadata:');
+                fprintf(fid, '%s\n', meta);
+                success = true;
+            catch me
+            end
+
+            fclose(io);
+            if success
+                delete(metafile);
+            end
+        end
+    end
+
 catch me
     fclose(fid);
     rethrow(me);
