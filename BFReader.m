@@ -51,11 +51,6 @@ end
 methods
     %-------------------------------------------------------------------------%
     function self = BFReader(inp)
-        jpath = fullfile(fileparts(mfilename('fullpath')),'loci_tools.jar');
-        javaaddpath(jpath);
-
-        loci.common.DebugTools.enableLogging('OFF');
-
         if ischar(inp)
             self.img_path = inp;
             self.io = true;
@@ -67,7 +62,6 @@ methods
             self.chan = {'none'};
             self.nchan = 1;
             self.siz = size(self.rep);
-
         end
     end
     %--------------------------------------------------------------------------%
@@ -114,7 +108,6 @@ methods
             d = self.rep(:,:,kslice);
         end
     end
-
     %--------------------------------------------------------------------------%
     function varargout = size(self,varargin)
     % s = size([dim]=<all>)
