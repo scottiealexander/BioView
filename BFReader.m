@@ -232,22 +232,71 @@ methods (Access=private)
         end
 
         field = cell(raw.keySet.toArray);
-        value = cell(raw.values.toArray);
+        labels = cell(raw.values.toArray);
 
+        % GIST: in the metadata, channel labels are listed as "Channel name #N"
+        % => <channel_label_string>, the issue is that there seem to always be
+        % 4 "Channel name" fields even if there are only 3 channels, thus we
+        % parse the channel indicies (the <N> in "Channel name #N") and use
+        %  those to order our channel label list (self.chan)
         b = strncmpi(field,'channel name',12);
-        [~,ksort] = sort(field(b));
-        value = value(b);
-        value = value(ksort);
 
-        if numel(value) < self.nchan
+        cfield = field(b);
+        labels = labels(b);
+
+        % kfield: a list mapping each label in <labels> to its channel index
+        % in the image (hopefully), by default mapping is just 1:N
+        kfield = 1:sum(b);
+
+        for k = 1:numel(cfield)
+            re = regexp(cfield{k}, '[Cc]hannel\s*[Nn]ame\s*\#?(\d+)',...
+                'tokens');
+
+            if isempty(re)
+                warning('BFReader:ChannelOrder',['Failed to find channel '...
+                    'order information in file metadata, channel labels '...
+                    '*MAY* be incorrect'...
+                    ]);
+            else
+                kf = str2double(re{1});
+                if isnan(kf)
+                    warning('BFReader:ChannelOrderConvert',['Failed to '...
+                        ' parse channel order from metadata'...
+                        ]);
+                else
+                    kfield(k) = str2double(re{1});
+                end
+            end
+        end
+
+        % ensure kfield are valid indicies, if it blows up fall back to 1:N
+        % and issue a warning
+        if any(kfield < 1)
+            kfield = kfield + (1 - min(kfield));
+        end
+
+        if any(kfield > sum(b))
+            kfield = 1:sum(b);
+            warning('BFReader:ChannelOrderRange',['Channel order '...
+                'information in file metadata was invalid, channel labels '...
+                '*MAY* be incorrect'...
+                ]);
+        end
+
+        % order the labels to that labels(K) => label of channel #K
+        [~,ksort] = sort(kfield);
+        labels = labels(ksort);
+
+        if numel(labels) < self.nchan
             error('Failed to find channel labels, aborting...');
         end
 
-        self.chan = unique(value(1:self.nchan));
-
-        if numel(self.chan) ~= self.nchan
-           error('Failed to recover from missing metadata... aborting');
-        end
+        % NOTE: we are assuming the if we have more labels than channels that
+        % the first N labels correctly map to the first N channels, which given
+        % all the schenanigans we go through above to ensure that the labels
+        % are in the correct order *SHOULD* always work... we'll have to see
+        % if that plays out in practice
+        self.chan = labels(1:self.nchan);
     end
     %--------------------------------------------------------------------------%
     function d = ReadChannel(self,kchan,kslice)
